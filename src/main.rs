@@ -1,20 +1,23 @@
+use reqwest;
 use std::env;
-use teloxide::prelude::*;
-use teloxide::types::Recipient;
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args: Vec<String> = env::args().collect();
-    let chat_id = env::var("TELOXIDE_CHAT_ID")
-        .expect("Define the chat id with: export TELOXIDE_CHAT_ID=<chat_id>");
+    let token =
+        env::var("TELEGRAM_TOKEN").expect("Define the chat id with: export TELEGRAM_TOKEN=<token>");
+    let chat_id = env::var("TELEGRAM_CHAT_ID")
+        .expect("Define the chat id with: export TELEGRAM_CHAT_ID=<chat_id>");
     let message = if args.len() > 1 {
         args[1..].join(" ")
     } else {
         String::from("Done!")
     };
 
-    let bot = Bot::from_env().auto_send();
+    let request_string = format!(
+        "https://api.telegram.org/bot{}/sendMessage?chat_id={}&text={}",
+        token, chat_id, message
+    );
 
-    let recepient = Recipient::ChannelUsername(chat_id);
-    bot.send_message(recepient, message).await.unwrap();
+    let _resp = reqwest::blocking::get(request_string);
+    // println!("{:#?}", resp);
 }

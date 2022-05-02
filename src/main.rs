@@ -7,10 +7,11 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
     let chat_id = env::var("TELOXIDE_CHAT_ID")
         .expect("Define the chat id with: export TELOXIDE_CHAT_ID=<chat_id>");
-    let mut message = "Done!";
-    if args.len() > 1 {
-        message = &args[1];
-    }
+    let message = if args.len() > 1 {
+        args[1..].join(" ")
+    } else {
+        String::from("Done!")
+    };
 
     let bot = Bot::from_env().auto_send();
 

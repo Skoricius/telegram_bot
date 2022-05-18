@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -31,6 +30,6 @@ func main() {
 
 	_, err := http.Get(api_request)
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
 	}
 }

@@ -28,7 +28,9 @@ export TELEGRAM_CHAT_ID=<chat_id>
 ```
 3. Use the built binary to send messages via:
 ```
-telegram Hey!
+telegram -t Hey!
 ```
+
+The utility can also send files and photos. Check `telegram -h` for details.
 
 You can also copy the compiled binary to `/usr/bin` and add the environmental variables to .bashrc to have it accessible as the terminal command.

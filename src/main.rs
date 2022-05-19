@@ -1,8 +1,8 @@
 use clap::Parser;
-use reqwest::{Client, Error};
-use std::env;
-use std::fs::File;
-use tokio::runtime::Runtime;
+use reqwest::blocking::multipart::Form;
+use reqwest::blocking::Client;
+use reqwest::Error;
+use std::{env, error};
 
 static API_URL: &str = "https://api.telegram.org/";
 
@@ -11,10 +11,14 @@ static API_URL: &str = "https://api.telegram.org/";
 #[clap(author, version, about, long_about = None)]
 struct Args {
     /// Text to send
-    #[clap(short, long, default_value = "Done!", global = true)]
+    #[clap(short, long, default_value = "Done!")]
     text: String,
 
-    /// Flag to send a picture file
+    /// Document to send
+    #[clap(short, long)]
+    file: Option<String>,
+
+    /// Picture to send
     #[clap(short, long)]
     photo: Option<String>,
 }
@@ -41,48 +45,62 @@ impl Chat {
     }
 }
 
-async fn send_message(client: &Client, chat: &Chat, message: &str) -> Result<(), Error> {
+fn send_message(client: &Client, chat: &Chat, message: &str) -> Result<(), Error> {
     let base_string = chat.base_string("sendMessage");
 
-    client
+    let _response = client
         .post(base_string)
         .query(&[("text", message)])
-        .send()
-        .await?;
+        .send()?;
     Ok(())
 }
 
-fn send_photo(client: &Client, chat: Chat, path: &str) {
-    let base_string = chat.base_string("sendMedia");
-    let file = File::open(path).expect("Can not find the photo!");
+fn send_photo(client: &Client, chat: &Chat, path: &str) -> Result<(), Box<dyn error::Error>> {
+    let base_string = chat.base_string("sendPhoto");
+    let form = match Form::new().file("photo", path) {
+        Ok(f) => f,
+        Err(err) => {
+            log::error!("Can not find the photo!");
+            return Err(Box::new(err));
+        }
+    };
 
-    client.post(base_string).body(file).send().await?;
+    let _response = client.post(base_string).multipart(form).send()?;
     Ok(())
 }
 
-fn main() {
+fn send_file(client: &Client, chat: &Chat, path: &str) -> Result<(), Box<dyn error::Error>> {
+    let base_string = chat.base_string("sendDocument");
+    let form = match Form::new().file("document", path) {
+        Ok(f) => f,
+        Err(err) => {
+            log::error!("Can not find the file!");
+            return Err(Box::new(err));
+        }
+    };
+
+    let _response = client.post(base_string).multipart(form).send()?;
+    Ok(())
+}
+
+fn main() -> Result<(), Box<dyn error::Error>> {
     pretty_env_logger::init();
     let args = Args::parse();
     let chat = Chat::from_env();
     let client = Client::new();
 
-    let rt = Runtime::new().unwrap();
-    let handle = rt.handle().clone();
-
-    match args.photo {
-        Some(path) => {
-            log::info!("Sending photo...");
-            handle
-                .block_on(send_message(&client, &chat, &path))
-                .unwrap();
-            log::info!("Photo sent!");
-        }
-        None => {
-            log::info!("Sending message...");
-            handle
-                .block_on(send_message(&client, &chat, &args.text))
-                .unwrap();
-            log::info!("Message sent!");
-        }
+    if let Some(path) = args.photo {
+        log::info!("Sending photo...");
+        send_photo(&client, &chat, &path)?;
+        log::info!("Photo sent!");
+    } else if let Some(path) = args.file {
+        log::info!("Sending file...");
+        send_file(&client, &chat, &path)?;
+        log::info!("File sent!");
+    } else {
+        log::info!("Sending message...");
+        send_message(&client, &chat, &args.text)?;
+        log::info!("Message sent!");
     }
+    Ok(())
 }

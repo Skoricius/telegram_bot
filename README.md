@@ -1,4 +1,9 @@
-# Basic telegram message sending bot
+# TELEGRAM BOT
+
+Small command line utility for sending messages via a telegram bot.
+This can be used to send notifications, pictures and files to a telegram chat.
+
+For example, you can use it to set a long process running on a computer and let it inform you when it is finished
 
 ## Building Rust version
 
@@ -9,14 +14,6 @@ cargo run --release
 ```
 
 The compiled binary is in `target/release/telegram`.
-
-# Building Go version
-
-1. Download and install Go
-2. Build with:
-```
-go build telegram.go
-```
 
 # Using
 
